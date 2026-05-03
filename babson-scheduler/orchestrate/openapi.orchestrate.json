@@ -1,0 +1,668 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Babson Library Scheduler — Admin Assistant API",
+    "version": "2.0.0",
+    "description": "Admin-facing API for the Babson Library student worker scheduling engine.\n\nThis spec is scoped for import into IBM Orchestrate as a custom extension.\nIt exposes only librarian / scheduler-admin operations: running preflight\nchecks, generating schedules, inspecting violations, reviewing student hour\nsummaries, and exporting the schedule to Excel.\n\nAvailability *collection* endpoints are excluded — the input source has not\nbeen confirmed yet and will be added in a future extension update."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Local development (run: uvicorn app.main:app --reload --port 8000)"
+    },
+    {
+      "url": "https://your-deployment-host.com",
+      "description": "Production — replace with actual host before deploying to IBM"
+    }
+  ],
+  "tags": [
+    { "name": "Health",      "description": "Liveness check" },
+    { "name": "Students",    "description": "Read-only student roster" },
+    { "name": "Shifts",      "description": "Generate shift instances for a week" },
+    { "name": "Diagnostics", "description": "Preflight feasibility checks before scheduling" },
+    { "name": "Schedules",   "description": "Schedule generation, retrieval, and assignment inspection" },
+    { "name": "Violations",  "description": "Constraint violations from the most recent schedule run" },
+    { "name": "Export",      "description": "Download the schedule as a formatted Excel workbook" }
+  ],
+  "paths": {
+
+    "/health": {
+      "get": {
+        "operationId": "checkHealth",
+        "tags": ["Health"],
+        "summary": "Check API health",
+        "description": "Returns a simple liveness response. IBM Orchestrate can use this as a connectivity probe before running any admin action.",
+        "responses": {
+          "200": {
+            "description": "API is running",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HealthResponse" },
+                "example": { "status": "ok", "version": "2.0.0" }
+              }
+            }
+          }
+        }
+      }
+    },
+
+    "/api/v1/students/": {
+      "get": {
+        "operationId": "listStudents",
+        "tags": ["Students"],
+        "summary": "List all active student workers",
+        "description": "Returns the full roster of active student workers with their hour constraints and seniority dates. Useful for confirming who will be included in the next schedule run.",
+        "responses": {
+          "200": {
+            "description": "List of active students",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Student" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+
+    "/api/v1/shifts/instances/generate": {
+      "post": {
+        "operationId": "generateShiftInstances",
+        "tags": ["Shifts"],
+        "summary": "Generate shift instances for a week",
+        "description": "Slices the library's operating hours into shift blocks and writes them to the database for the given week. Must be run before generating a schedule. Idempotent by default — set `force: true` to wipe and regenerate.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/GenerateShiftsRequest" },
+              "example": {
+                "week_start_date": "2026-05-04",
+                "is_exam_period": false,
+                "slots_per_window": 1,
+                "force": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Number of shift instances created",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/GenerateShiftsResponse" },
+                "example": {
+                  "generated": 42,
+                  "week_start_date": "2026-05-04",
+                  "slots_per_window": 1,
+                  "is_exam_period": false
+                }
+              }
+            }
+          },
+          "422": { "description": "Invalid week date or generation error" }
+        }
+      }
+    },
+
+    "/api/v1/diagnostics/preflight": {
+      "post": {
+        "operationId": "runPreflightCheck",
+        "tags": ["Diagnostics"],
+        "summary": "Run a preflight feasibility check",
+        "description": "Analyses the current state of students, shift instances, and availability submissions for a given week. Identifies hard blockers (e.g. zero availability for a shift) and soft warnings (e.g. a student below minimum hours) before a schedule is generated. Saves a snapshot that can be retrieved later via GET.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/PreflightRequest" },
+              "example": {
+                "week_start_date": "2026-05-04",
+                "is_exam_period": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Preflight report with feasibility verdict and findings list",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/PreflightReport" }
+              }
+            }
+          },
+          "422": { "description": "Invalid week or missing shift data" }
+        }
+      }
+    },
+
+    "/api/v1/diagnostics/preflight/{week_start_date}": {
+      "get": {
+        "operationId": "getPreflightSnapshot",
+        "tags": ["Diagnostics"],
+        "summary": "Retrieve the most recent preflight report for a week",
+        "description": "Fetches the latest saved preflight snapshot for the given week. Run `POST /api/v1/diagnostics/preflight` first to generate one.",
+        "parameters": [
+          {
+            "name": "week_start_date",
+            "in": "path",
+            "required": true,
+            "description": "Monday of the target week in YYYY-MM-DD format (e.g. 2026-05-04)",
+            "schema": { "type": "string", "format": "date", "example": "2026-05-04" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Most recent preflight snapshot for the week",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/PreflightReport" }
+              }
+            }
+          },
+          "404": { "description": "No preflight snapshot found for this week" }
+        }
+      }
+    },
+
+    "/api/v1/schedules/generate": {
+      "post": {
+        "operationId": "generateSchedule",
+        "tags": ["Schedules"],
+        "summary": "Generate a new schedule for a week",
+        "description": "Runs the CP-SAT constraint solver to produce an optimised assignment of student workers to shifts. The solver respects student availability levels, min/max weekly hour limits, seniority order, hard-shift priority, no-overlap, and maximum consecutive-hours rules.\n\nReturns a schedule run record including fill rate and violation counts. If any **hard violations** are present the schedule will have `status: violated` and should not be published automatically.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/GenerateScheduleRequest" },
+              "example": {
+                "week_start_date": "2026-05-04",
+                "is_exam_period": false,
+                "solver_time_limit_seconds": 60,
+                "force_regenerate": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Schedule run record with summary statistics",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ScheduleRun" }
+              }
+            }
+          },
+          "409": { "description": "A run with locked assignments already exists for this week. Pass `force_regenerate: true` to override." },
+          "422": { "description": "Validation error or missing prerequisite data" }
+        }
+      }
+    },
+
+    "/api/v1/schedules/": {
+      "get": {
+        "operationId": "listScheduleRuns",
+        "tags": ["Schedules"],
+        "summary": "List all schedule runs",
+        "description": "Returns all schedule runs in reverse chronological order. Useful for finding the `run_id` of the most recent draft or published schedule.",
+        "parameters": [
+          {
+            "name": "week_start_date",
+            "in": "query",
+            "required": false,
+            "description": "Filter by week (YYYY-MM-DD Monday date)",
+            "schema": { "type": "string", "format": "date" }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "description": "Filter by run status: draft, published, or violated",
+            "schema": { "type": "string", "enum": ["draft", "published", "violated"] }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of schedule runs",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/ScheduleRun" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+
+    "/api/v1/schedules/{run_id}": {
+      "get": {
+        "operationId": "getSchedule",
+        "tags": ["Schedules"],
+        "summary": "Get full schedule details for a run",
+        "description": "Returns the complete schedule: run metadata, all shift assignments (with student names and preference levels used), and per-student hour summaries.",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "description": "UUID of the schedule run",
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Full schedule with assignments and student summaries",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ScheduleFull" }
+              }
+            }
+          },
+          "404": { "description": "Run not found" }
+        }
+      }
+    },
+
+    "/api/v1/schedules/{run_id}/assignments": {
+      "get": {
+        "operationId": "getAssignments",
+        "tags": ["Schedules"],
+        "summary": "List shift-by-shift assignments for a run",
+        "description": "Returns every shift assignment for the run — one record per shift slot — with the assigned student (or null if unfilled), the preference level used, and any override notes.",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "description": "UUID of the schedule run",
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of shift assignments",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Assignment" }
+                }
+              }
+            }
+          },
+          "404": { "description": "Run not found" }
+        }
+      }
+    },
+
+    "/api/v1/schedules/{run_id}/student-summaries": {
+      "get": {
+        "operationId": "getStudentSummaries",
+        "tags": ["Schedules"],
+        "summary": "Get per-student hour summaries for a run",
+        "description": "Returns each student's total assigned hours, shift count, and whether they meet their minimum/maximum hour constraints. Useful for answering 'Which students are below minimum hours?'",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "description": "UUID of the schedule run",
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Per-student summary list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/StudentSummary" }
+                }
+              }
+            }
+          },
+          "404": { "description": "Run not found" }
+        }
+      }
+    },
+
+    "/api/v1/violations/{run_id}": {
+      "get": {
+        "operationId": "getViolations",
+        "tags": ["Violations"],
+        "summary": "List all violations for a schedule run",
+        "description": "Returns every constraint violation detected by the postflight validator — both hard violations (block publishing) and soft violations (warnings). Violations are grouped by severity.\n\nCommon violation types:\n- `UNFILLED_SHIFT` — no eligible student was available (hard)\n- `COVERAGE_GAP` — a time window has no coverage (hard)\n- `CONSECUTIVE_HOURS_EXCEEDED` — student assigned more than 6 consecutive hours (hard)\n- `OVERLAPPING_ASSIGNMENT` — student assigned to two overlapping shifts (hard)\n- `STUDENT_UNDER_MINIMUM` — student below their weekly minimum hours (soft)\n- `PREFERENCE_VIOLATED` — student scheduled for a shift they marked cannot_work (soft)",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "description": "UUID of the schedule run",
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "All violations for the run (hard + soft)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Violation" }
+                }
+              }
+            }
+          },
+          "404": { "description": "Run not found" }
+        }
+      }
+    },
+
+    "/api/v1/violations/{run_id}/hard": {
+      "get": {
+        "operationId": "getHardViolations",
+        "tags": ["Violations"],
+        "summary": "List only hard (blocking) violations",
+        "description": "Returns only hard violations — the subset that must be resolved before a schedule can be published. **IBM Orchestrate branch condition:** an empty list means the schedule is safe to publish automatically; a non-empty list means human review is required.\n\nThis is the recommended endpoint to use as a decision gate in an automated workflow.",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "description": "UUID of the schedule run",
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Hard violations only — empty array means schedule is publishable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Violation" }
+                }
+              }
+            }
+          },
+          "404": { "description": "Run not found" }
+        }
+      }
+    },
+
+    "/api/v1/export/{run_id}/excel": {
+      "get": {
+        "operationId": "exportScheduleExcel",
+        "tags": ["Export"],
+        "summary": "Download the schedule as a formatted Excel workbook",
+        "description": "Streams a multi-sheet Excel workbook (.xlsx) for the given schedule run. Sheets included:\n1. **Dashboard** — key metrics and summary statistics\n2. **Schedule** — shift-by-shift assignments with student names\n3. **Student Summary** — per-student hours and constraint status\n4. **Violations** — all violations grouped by severity\n5. **Technical Details** — raw fields for admin reference\n\nHard shifts are highlighted in orange; unfilled shifts in red; under/over-hours students in red.",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "description": "UUID of the schedule run",
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Excel workbook file download",
+            "content": {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+                "schema": { "type": "string", "format": "binary" }
+              }
+            }
+          },
+          "404": { "description": "Run not found" }
+        }
+      }
+    }
+
+  },
+
+  "components": {
+    "schemas": {
+
+      "HealthResponse": {
+        "type": "object",
+        "description": "API liveness response",
+        "properties": {
+          "status":  { "type": "string", "example": "ok" },
+          "version": { "type": "string", "example": "2.0.0" }
+        },
+        "required": ["status", "version"]
+      },
+
+      "Student": {
+        "type": "object",
+        "description": "Active student worker record",
+        "properties": {
+          "id":             { "type": "string", "format": "uuid", "description": "Student UUID — use this as `student_id` in other calls" },
+          "name":           { "type": "string", "example": "Maya Patel" },
+          "email":          { "type": "string", "format": "email", "example": "mpatel@babson.edu" },
+          "seniority_date": { "type": "string", "format": "date", "description": "Earlier date = higher seniority = scheduling priority", "example": "2024-09-01" },
+          "min_hours":      { "type": "integer", "description": "Minimum hours the student must be scheduled per week", "example": 8 },
+          "max_hours":      { "type": "integer", "description": "Maximum hours the student may be scheduled per week", "example": 20 },
+          "target_hours":   { "type": "integer", "description": "Student's preferred hours target", "example": 12 },
+          "is_active":      { "type": "boolean", "example": true },
+          "created_at":     { "type": "string", "format": "date-time" }
+        },
+        "required": ["id", "name", "email", "seniority_date", "min_hours", "max_hours", "target_hours", "is_active"]
+      },
+
+      "GenerateShiftsRequest": {
+        "type": "object",
+        "description": "Request to generate shift instances for a week",
+        "properties": {
+          "week_start_date":  { "type": "string", "format": "date", "description": "Monday of the target week (YYYY-MM-DD)", "example": "2026-05-04" },
+          "is_exam_period":   { "type": "boolean", "default": false, "description": "Use extended exam-period operating hours" },
+          "slots_per_window": { "type": "integer", "minimum": 1, "maximum": 4, "default": 1, "description": "Number of concurrent desk positions per time window. Default is 1 (one student per shift). Increase only when a specific window genuinely requires more than one worker simultaneously." },
+          "force":            { "type": "boolean", "default": true, "description": "Delete existing instances and regenerate from scratch" }
+        },
+        "required": ["week_start_date"]
+      },
+
+      "GenerateShiftsResponse": {
+        "type": "object",
+        "description": "Summary of shift generation",
+        "properties": {
+          "generated":        { "type": "integer", "description": "Number of shift instance rows written", "example": 84 },
+          "week_start_date":  { "type": "string", "format": "date" },
+          "slots_per_window": { "type": "integer", "example": 2 },
+          "is_exam_period":   { "type": "boolean", "example": false }
+        }
+      },
+
+      "PreflightRequest": {
+        "type": "object",
+        "description": "Request to run a preflight feasibility check",
+        "properties": {
+          "week_start_date": { "type": "string", "format": "date", "description": "Monday of the target week (YYYY-MM-DD)", "example": "2026-05-04" },
+          "is_exam_period":  { "type": "boolean", "default": false }
+        },
+        "required": ["week_start_date"]
+      },
+
+      "DiagnosticFinding": {
+        "type": "object",
+        "description": "A single preflight diagnostic finding",
+        "properties": {
+          "check_type":          { "type": "string", "description": "Type of check that produced this finding", "example": "NO_ELIGIBLE_STUDENTS" },
+          "severity":            { "type": "string", "enum": ["hard", "warning", "info"], "description": "hard = blocks scheduling; warning = review needed; info = informational" },
+          "shift_instance_id":   { "type": "string", "format": "uuid", "nullable": true },
+          "shift_date":          { "type": "string", "format": "date", "nullable": true },
+          "shift_time":          { "type": "string", "nullable": true, "example": "07:30–09:30" },
+          "student_id":          { "type": "string", "format": "uuid", "nullable": true },
+          "student_name":        { "type": "string", "nullable": true },
+          "available_count":     { "type": "integer", "nullable": true },
+          "description":         { "type": "string", "description": "Plain-English explanation of the finding" },
+          "recommended_action":  { "type": "string", "description": "What the admin should do to resolve this finding" }
+        },
+        "required": ["check_type", "severity", "description", "recommended_action"]
+      },
+
+      "PreflightReport": {
+        "type": "object",
+        "description": "Preflight feasibility report for a week",
+        "properties": {
+          "week_start_date":       { "type": "string", "format": "date" },
+          "snapshot_id":           { "type": "string", "format": "uuid" },
+          "created_at":            { "type": "string", "format": "date-time" },
+          "is_feasible":           { "type": "boolean", "description": "False if any hard findings exist — scheduling will likely fail or produce violated results" },
+          "hard_findings_count":   { "type": "integer", "description": "Number of blocking issues that must be resolved", "example": 0 },
+          "warning_findings_count":{ "type": "integer", "description": "Number of non-blocking warnings", "example": 2 },
+          "findings":              { "type": "array", "items": { "$ref": "#/components/schemas/DiagnosticFinding" } }
+        },
+        "required": ["week_start_date", "is_feasible", "hard_findings_count", "warning_findings_count", "findings"]
+      },
+
+      "GenerateScheduleRequest": {
+        "type": "object",
+        "description": "Request to run the CP-SAT scheduling solver",
+        "properties": {
+          "week_start_date":           { "type": "string", "format": "date", "description": "Monday of the target week (YYYY-MM-DD)", "example": "2026-05-04" },
+          "is_exam_period":            { "type": "boolean", "default": false },
+          "solver_time_limit_seconds": { "type": "integer", "minimum": 5, "maximum": 300, "default": 60, "description": "Maximum time allowed for the solver before it returns the best solution found so far" },
+          "force_regenerate":          { "type": "boolean", "default": false, "description": "Overwrite an existing draft. Blocked with 409 if any assignments are locked." }
+        },
+        "required": ["week_start_date"]
+      },
+
+      "ScheduleRun": {
+        "type": "object",
+        "description": "Summary record for a schedule generation run",
+        "properties": {
+          "id":                    { "type": "string", "format": "uuid", "description": "run_id — use this in all subsequent schedule/violations/export calls" },
+          "week_start_date":       { "type": "string", "format": "date" },
+          "status":                { "type": "string", "enum": ["draft", "published", "violated"], "description": "draft = generated but not reviewed; violated = hard violations exist; published = approved" },
+          "solver_status":         { "type": "string", "nullable": true, "example": "OPTIMAL" },
+          "solve_time_ms":         { "type": "integer", "nullable": true, "description": "Wall-clock time the solver took in milliseconds" },
+          "objective_score":       { "type": "number", "nullable": true, "description": "Solver objective value — higher is better" },
+          "generated_at":          { "type": "string", "format": "date-time" },
+          "published_at":          { "type": "string", "format": "date-time", "nullable": true },
+          "notes":                 { "type": "string", "nullable": true },
+          "total_shifts":          { "type": "integer", "example": 42 },
+          "filled_shifts":         { "type": "integer", "example": 40 },
+          "unfilled_shifts":       { "type": "integer", "example": 2 },
+          "hard_violations_count": { "type": "integer", "description": "Must be 0 before publishing", "example": 0 },
+          "soft_violations_count": { "type": "integer", "example": 3 }
+        },
+        "required": ["id", "week_start_date", "status", "generated_at", "total_shifts", "filled_shifts", "unfilled_shifts", "hard_violations_count", "soft_violations_count"]
+      },
+
+      "ShiftInfo": {
+        "type": "object",
+        "description": "Shift instance details embedded in an assignment or violation",
+        "properties": {
+          "id":             { "type": "string", "format": "uuid" },
+          "date":           { "type": "string", "format": "date", "example": "2026-05-05" },
+          "day_of_week":    { "type": "integer", "description": "0=Monday … 6=Sunday", "example": 1 },
+          "start_time":     { "type": "string", "example": "09:30" },
+          "end_time":       { "type": "string", "example": "11:30" },
+          "duration_hours": { "type": "number", "example": 2.0 },
+          "is_hard_shift":  { "type": "boolean", "description": "True for early-morning (07:30–09:00) and late-night (23:00–02:00) shifts" },
+          "slot_index":     { "type": "integer", "description": "0 or 1 — index within a shared coverage window" }
+        }
+      },
+
+      "StudentInfo": {
+        "type": "object",
+        "description": "Minimal student reference embedded in an assignment or violation",
+        "properties": {
+          "id":             { "type": "string", "format": "uuid" },
+          "name":           { "type": "string", "example": "Sofia Nguyen" },
+          "email":          { "type": "string", "format": "email" },
+          "seniority_date": { "type": "string", "format": "date" }
+        }
+      },
+
+      "Assignment": {
+        "type": "object",
+        "description": "A single shift assignment in the schedule",
+        "properties": {
+          "id":                    { "type": "string", "format": "uuid" },
+          "shift":                 { "$ref": "#/components/schemas/ShiftInfo" },
+          "student":               { "allOf": [{ "$ref": "#/components/schemas/StudentInfo" }], "nullable": true, "description": "null = shift is unfilled" },
+          "preference_level_used": { "type": "string", "enum": ["preferred", "available", "unassigned"], "description": "The availability level that justified this assignment" },
+          "reason_codes":          { "type": "array", "items": { "type": "string" }, "description": "Solver explanation codes, e.g. SENIORITY_PRIORITY, UNDER_TARGET" },
+          "is_locked":             { "type": "boolean", "description": "Locked assignments are preserved across re-generate calls" },
+          "is_manual_override":    { "type": "boolean" },
+          "override_reason":       { "type": "string", "nullable": true },
+          "assigned_at":           { "type": "string", "format": "date-time" }
+        },
+        "required": ["id", "shift", "preference_level_used", "is_locked", "is_manual_override", "assigned_at"]
+      },
+
+      "StudentSummary": {
+        "type": "object",
+        "description": "Per-student hours summary for a schedule run",
+        "properties": {
+          "student_id":       { "type": "string", "format": "uuid" },
+          "name":             { "type": "string", "example": "Lucas Chen" },
+          "email":            { "type": "string", "format": "email" },
+          "seniority_date":   { "type": "string", "format": "date" },
+          "min_hours":        { "type": "integer", "example": 8 },
+          "target_hours":     { "type": "integer", "example": 12 },
+          "max_hours":        { "type": "integer", "example": 20 },
+          "assigned_hours":   { "type": "number", "example": 10.5 },
+          "shifts_assigned":  { "type": "integer", "example": 5 },
+          "preferred_shifts": { "type": "integer", "description": "Shifts assigned where student had marked 'preferred'", "example": 4 },
+          "available_shifts": { "type": "integer", "description": "Shifts assigned where student had marked 'available'", "example": 1 },
+          "hours_vs_target":  { "type": "number", "description": "assigned_hours − target_hours. Negative = under target.", "example": -1.5 },
+          "constraint_status":{ "type": "string", "enum": ["ok", "under_minimum", "over_maximum", "at_target"], "description": "ok = within min/max bounds; under_minimum = soft violation" }
+        },
+        "required": ["student_id", "name", "assigned_hours", "shifts_assigned", "constraint_status"]
+      },
+
+      "ScheduleFull": {
+        "type": "object",
+        "description": "Complete schedule response including all assignments and student summaries",
+        "properties": {
+          "run":              { "$ref": "#/components/schemas/ScheduleRun" },
+          "assignments":      { "type": "array", "items": { "$ref": "#/components/schemas/Assignment" } },
+          "student_summaries":{ "type": "array", "items": { "$ref": "#/components/schemas/StudentSummary" } }
+        },
+        "required": ["run", "assignments", "student_summaries"]
+      },
+
+      "Violation": {
+        "type": "object",
+        "description": "A constraint violation detected by the postflight validator",
+        "properties": {
+          "id":             { "type": "string", "format": "uuid" },
+          "violation_type": {
+            "type": "string",
+            "description": "Machine-readable violation code",
+            "enum": [
+              "UNFILLED_SHIFT",
+              "COVERAGE_GAP",
+              "CONSECUTIVE_HOURS_EXCEEDED",
+              "OVERLAPPING_ASSIGNMENT",
+              "STUDENT_OVER_MAXIMUM",
+              "STUDENT_UNDER_MINIMUM",
+              "PREFERENCE_VIOLATED",
+              "BAD_SEQUENCE_OVERNIGHT"
+            ]
+          },
+          "severity":       { "type": "string", "enum": ["hard", "soft"], "description": "hard = must resolve before publishing; soft = warning only" },
+          "source":         { "type": "string", "description": "Which validator produced this finding", "example": "postflight" },
+          "shift":          { "allOf": [{ "$ref": "#/components/schemas/ShiftInfo" }], "nullable": true },
+          "student":        { "allOf": [{ "$ref": "#/components/schemas/StudentInfo" }], "nullable": true },
+          "description":    { "type": "string", "description": "Plain-English description of the constraint that was violated", "example": "Sofia Nguyen is assigned 8.0 consecutive hours on Tuesday, exceeding the 6-hour maximum." }
+        },
+        "required": ["id", "violation_type", "severity", "description"]
+      }
+
+    }
+  }
+}

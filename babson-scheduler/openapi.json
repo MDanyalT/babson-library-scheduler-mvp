@@ -1,0 +1,2863 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Babson Library Student Worker Scheduler",
+    "description": "\n    Constraint-aware scheduling system for Babson Library student workers.\n\n    Uses Google OR-Tools CP-SAT for optimization-based schedule generation.\n    Designed for IBM Orchestrate integration via OpenAPI custom extension.\n    ",
+    "version": "2.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Local development"
+    },
+    {
+      "url": "https://your-deployment-host.com",
+      "description": "Production"
+    }
+  ],
+  "paths": {
+    "/api/v1/students/": {
+      "get": {
+        "tags": [
+          "Students"
+        ],
+        "summary": "List Students",
+        "operationId": "list_students_api_v1_students__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/StudentOut"
+                  },
+                  "type": "array",
+                  "title": "Response List Students Api V1 Students  Get"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Students"
+        ],
+        "summary": "Create Student",
+        "operationId": "create_student_api_v1_students__post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StudentCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudentOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/students/{student_id}": {
+      "get": {
+        "tags": [
+          "Students"
+        ],
+        "summary": "Get Student",
+        "operationId": "get_student_api_v1_students__student_id__get",
+        "parameters": [
+          {
+            "name": "student_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Student Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudentOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Students"
+        ],
+        "summary": "Update Student",
+        "operationId": "update_student_api_v1_students__student_id__patch",
+        "parameters": [
+          {
+            "name": "student_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Student Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StudentUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudentOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Students"
+        ],
+        "summary": "Deactivate Student",
+        "operationId": "deactivate_student_api_v1_students__student_id__delete",
+        "parameters": [
+          {
+            "name": "student_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Student Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Deactivate Student Api V1 Students  Student Id  Delete"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/availability/": {
+      "post": {
+        "tags": [
+          "Availability"
+        ],
+        "summary": "Submit Availability",
+        "operationId": "submit_availability_api_v1_availability__post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AvailabilitySubmitRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Submit Availability Api V1 Availability  Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Availability"
+        ],
+        "summary": "List Availability",
+        "operationId": "list_availability_api_v1_availability__get",
+        "parameters": [
+          {
+            "name": "student_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Student Id"
+            }
+          },
+          {
+            "name": "week_start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Week Start Date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AvailabilitySlotOut"
+                  },
+                  "title": "Response List Availability Api V1 Availability  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/availability/heatmap/{week_start_date}": {
+      "get": {
+        "tags": [
+          "Availability"
+        ],
+        "summary": "Get Heatmap",
+        "operationId": "get_heatmap_api_v1_availability_heatmap__week_start_date__get",
+        "parameters": [
+          {
+            "name": "week_start_date",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Week Start Date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CoverageHeatmapEntry"
+                  },
+                  "title": "Response Get Heatmap Api V1 Availability Heatmap  Week Start Date  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/availability/import": {
+      "post": {
+        "tags": [
+          "Availability"
+        ],
+        "summary": "Import Availability",
+        "operationId": "import_availability_api_v1_availability_import_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_import_availability_api_v1_availability_import_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Import Availability Api V1 Availability Import Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/shifts/templates": {
+      "get": {
+        "tags": [
+          "Shifts"
+        ],
+        "summary": "List Templates",
+        "operationId": "list_templates_api_v1_shifts_templates_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ShiftTemplateOut"
+                  },
+                  "type": "array",
+                  "title": "Response List Templates Api V1 Shifts Templates Get"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Shifts"
+        ],
+        "summary": "Create Template",
+        "operationId": "create_template_api_v1_shifts_templates_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ShiftTemplateCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShiftTemplateOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/shifts/templates/{template_id}": {
+      "delete": {
+        "tags": [
+          "Shifts"
+        ],
+        "summary": "Deactivate Template",
+        "operationId": "deactivate_template_api_v1_shifts_templates__template_id__delete",
+        "parameters": [
+          {
+            "name": "template_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Template Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Deactivate Template Api V1 Shifts Templates  Template Id  Delete"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/shifts/instances/generate": {
+      "post": {
+        "tags": [
+          "Shifts"
+        ],
+        "summary": "Generate Instances",
+        "operationId": "generate_instances_api_v1_shifts_instances_generate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ShiftInstanceGenerateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Generate Instances Api V1 Shifts Instances Generate Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/shifts/instances": {
+      "get": {
+        "tags": [
+          "Shifts"
+        ],
+        "summary": "List Instances",
+        "operationId": "list_instances_api_v1_shifts_instances_get",
+        "parameters": [
+          {
+            "name": "week_start_date",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Week Start Date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ShiftInstanceOut"
+                  },
+                  "title": "Response List Instances Api V1 Shifts Instances Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/shifts/seed-templates": {
+      "post": {
+        "tags": [
+          "Shifts"
+        ],
+        "summary": "Seed Templates",
+        "operationId": "seed_templates_api_v1_shifts_seed_templates_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Seed Templates Api V1 Shifts Seed Templates Post"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/schedules/generate": {
+      "post": {
+        "tags": [
+          "Schedules"
+        ],
+        "summary": "Run Generate",
+        "operationId": "run_generate_api_v1_schedules_generate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScheduleGenerateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScheduleRunOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/schedules/": {
+      "get": {
+        "tags": [
+          "Schedules"
+        ],
+        "summary": "List Runs",
+        "operationId": "list_runs_api_v1_schedules__get",
+        "parameters": [
+          {
+            "name": "week_start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Week Start Date"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ScheduleRunOut"
+                  },
+                  "title": "Response List Runs Api V1 Schedules  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/schedules/{run_id}": {
+      "get": {
+        "tags": [
+          "Schedules"
+        ],
+        "summary": "Get Schedule",
+        "operationId": "get_schedule_api_v1_schedules__run_id__get",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Run Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScheduleFullOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/schedules/{run_id}/assignments": {
+      "get": {
+        "tags": [
+          "Schedules"
+        ],
+        "summary": "Get Assignments",
+        "operationId": "get_assignments_api_v1_schedules__run_id__assignments_get",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Run Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AssignmentOut"
+                  },
+                  "title": "Response Get Assignments Api V1 Schedules  Run Id  Assignments Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/schedules/{run_id}/student-summaries": {
+      "get": {
+        "tags": [
+          "Schedules"
+        ],
+        "summary": "Get Student Summaries",
+        "operationId": "get_student_summaries_api_v1_schedules__run_id__student_summaries_get",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Run Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/StudentSummaryOut"
+                  },
+                  "title": "Response Get Student Summaries Api V1 Schedules  Run Id  Student Summaries Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/schedules/{run_id}/assignments/{assignment_id}": {
+      "patch": {
+        "tags": [
+          "Schedules"
+        ],
+        "summary": "Patch Assignment",
+        "operationId": "patch_assignment_api_v1_schedules__run_id__assignments__assignment_id__patch",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Run Id"
+            }
+          },
+          {
+            "name": "assignment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Assignment Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignmentPatchRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Patch Assignment Api V1 Schedules  Run Id  Assignments  Assignment Id  Patch"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/schedules/{run_id}/assignments/{assignment_id}/lock": {
+      "post": {
+        "tags": [
+          "Schedules"
+        ],
+        "summary": "Lock Assignment",
+        "operationId": "lock_assignment_api_v1_schedules__run_id__assignments__assignment_id__lock_post",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Run Id"
+            }
+          },
+          {
+            "name": "assignment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Assignment Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Lock Assignment Api V1 Schedules  Run Id  Assignments  Assignment Id  Lock Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Schedules"
+        ],
+        "summary": "Unlock Assignment",
+        "operationId": "unlock_assignment_api_v1_schedules__run_id__assignments__assignment_id__lock_delete",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Run Id"
+            }
+          },
+          {
+            "name": "assignment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Assignment Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Unlock Assignment Api V1 Schedules  Run Id  Assignments  Assignment Id  Lock Delete"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/schedules/{run_id}/publish": {
+      "post": {
+        "tags": [
+          "Schedules"
+        ],
+        "summary": "Publish Schedule",
+        "operationId": "publish_schedule_api_v1_schedules__run_id__publish_post",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Run Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScheduleRunOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/diagnostics/preflight": {
+      "post": {
+        "tags": [
+          "Diagnostics"
+        ],
+        "summary": "Run Preflight Check",
+        "operationId": "run_preflight_check_api_v1_diagnostics_preflight_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PreflightRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Run Preflight Check Api V1 Diagnostics Preflight Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/diagnostics/preflight/{week_start_date}": {
+      "get": {
+        "tags": [
+          "Diagnostics"
+        ],
+        "summary": "Get Preflight Snapshot",
+        "operationId": "get_preflight_snapshot_api_v1_diagnostics_preflight__week_start_date__get",
+        "parameters": [
+          {
+            "name": "week_start_date",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Week Start Date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreflightReportOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/diagnostics/config": {
+      "get": {
+        "tags": [
+          "Diagnostics"
+        ],
+        "summary": "Get Config",
+        "operationId": "get_config_api_v1_diagnostics_config_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchedulerConfigOut"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Diagnostics"
+        ],
+        "summary": "Update Config",
+        "operationId": "update_config_api_v1_diagnostics_config_patch",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SchedulerConfigUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchedulerConfigOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/violations/{run_id}": {
+      "get": {
+        "tags": [
+          "Violations"
+        ],
+        "summary": "Get Violations",
+        "operationId": "get_violations_api_v1_violations__run_id__get",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Run Id"
+            }
+          },
+          {
+            "name": "severity",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Severity"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  },
+                  "title": "Response Get Violations Api V1 Violations  Run Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/violations/{run_id}/hard": {
+      "get": {
+        "tags": [
+          "Violations"
+        ],
+        "summary": "Get Hard Violations",
+        "description": "Shorthand for ?severity=hard.\nIBM Orchestrate branch condition: empty list = safe to publish.",
+        "operationId": "get_hard_violations_api_v1_violations__run_id__hard_get",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Run Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  },
+                  "title": "Response Get Hard Violations Api V1 Violations  Run Id  Hard Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/export/{run_id}/excel": {
+      "get": {
+        "tags": [
+          "Export"
+        ],
+        "summary": "Export Excel",
+        "operationId": "export_excel_api_v1_export__run_id__excel_get",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Run Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "tags": [
+          "Health"
+        ],
+        "summary": "Health Check",
+        "operationId": "health_check_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AssignmentOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "shift": {
+            "$ref": "#/components/schemas/AssignmentShiftInfo"
+          },
+          "student": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AssignmentStudentInfo"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "preference_level_used": {
+            "type": "string",
+            "title": "Preference Level Used"
+          },
+          "reason_codes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Reason Codes",
+            "description": "Explains why this assignment was made"
+          },
+          "is_locked": {
+            "type": "boolean",
+            "title": "Is Locked"
+          },
+          "is_manual_override": {
+            "type": "boolean",
+            "title": "Is Manual Override"
+          },
+          "override_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Override Reason"
+          },
+          "assigned_at": {
+            "type": "string",
+            "title": "Assigned At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "shift",
+          "preference_level_used",
+          "is_locked",
+          "is_manual_override",
+          "assigned_at"
+        ],
+        "title": "AssignmentOut"
+      },
+      "AssignmentPatchRequest": {
+        "properties": {
+          "student_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Student Id",
+            "description": "New student UUID, or null to clear"
+          },
+          "override_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Override Reason",
+            "description": "Staff note explaining the change"
+          }
+        },
+        "type": "object",
+        "title": "AssignmentPatchRequest"
+      },
+      "AssignmentShiftInfo": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "date": {
+            "type": "string",
+            "title": "Date"
+          },
+          "day_of_week": {
+            "type": "integer",
+            "title": "Day Of Week"
+          },
+          "start_time": {
+            "type": "string",
+            "title": "Start Time"
+          },
+          "end_time": {
+            "type": "string",
+            "title": "End Time"
+          },
+          "duration_hours": {
+            "type": "number",
+            "title": "Duration Hours"
+          },
+          "is_hard_shift": {
+            "type": "boolean",
+            "title": "Is Hard Shift"
+          },
+          "slot_index": {
+            "type": "integer",
+            "title": "Slot Index"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "date",
+          "day_of_week",
+          "start_time",
+          "end_time",
+          "duration_hours",
+          "is_hard_shift",
+          "slot_index"
+        ],
+        "title": "AssignmentShiftInfo"
+      },
+      "AssignmentStudentInfo": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "seniority_date": {
+            "type": "string",
+            "title": "Seniority Date"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "email",
+          "seniority_date"
+        ],
+        "title": "AssignmentStudentInfo"
+      },
+      "AvailabilitySlot": {
+        "properties": {
+          "shift_instance_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Shift Instance Id",
+            "description": "Preferred: link directly to shift_instance. Provide this OR (day_of_week + times)."
+          },
+          "day_of_week": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 6.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Day Of Week",
+            "description": "0=Monday \u2026 6=Sunday"
+          },
+          "start_time": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Time",
+            "description": "HH:MM"
+          },
+          "end_time": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Time",
+            "description": "HH:MM"
+          },
+          "level": {
+            "type": "string",
+            "enum": [
+              "preferred",
+              "available",
+              "cannot_work"
+            ],
+            "title": "Level",
+            "description": "Availability level for this slot"
+          }
+        },
+        "type": "object",
+        "required": [
+          "level"
+        ],
+        "title": "AvailabilitySlot"
+      },
+      "AvailabilitySlotOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "student_id": {
+            "type": "string",
+            "title": "Student Id"
+          },
+          "week_start_date": {
+            "type": "string",
+            "title": "Week Start Date"
+          },
+          "shift_instance_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Shift Instance Id"
+          },
+          "day_of_week": {
+            "type": "integer",
+            "title": "Day Of Week"
+          },
+          "start_time": {
+            "type": "string",
+            "title": "Start Time"
+          },
+          "end_time": {
+            "type": "string",
+            "title": "End Time"
+          },
+          "level": {
+            "type": "string",
+            "title": "Level"
+          },
+          "submitted_at": {
+            "type": "string",
+            "title": "Submitted At"
+          },
+          "import_source": {
+            "type": "string",
+            "title": "Import Source"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "student_id",
+          "week_start_date",
+          "shift_instance_id",
+          "day_of_week",
+          "start_time",
+          "end_time",
+          "level",
+          "submitted_at",
+          "import_source"
+        ],
+        "title": "AvailabilitySlotOut"
+      },
+      "AvailabilitySubmitRequest": {
+        "properties": {
+          "student_id": {
+            "type": "string",
+            "title": "Student Id",
+            "description": "UUID of the submitting student"
+          },
+          "week_start_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Week Start Date",
+            "description": "Monday of the target week"
+          },
+          "slots": {
+            "items": {
+              "$ref": "#/components/schemas/AvailabilitySlot"
+            },
+            "type": "array",
+            "title": "Slots",
+            "description": "All availability slots. Atomically replaces any previous submission for this student+week."
+          },
+          "import_source": {
+            "type": "string",
+            "enum": [
+              "api",
+              "excel",
+              "form"
+            ],
+            "title": "Import Source",
+            "default": "api"
+          }
+        },
+        "type": "object",
+        "required": [
+          "student_id",
+          "week_start_date",
+          "slots"
+        ],
+        "title": "AvailabilitySubmitRequest"
+      },
+      "Body_import_availability_api_v1_availability_import_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "format": "binary",
+            "title": "File"
+          },
+          "week_start_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Week Start Date"
+          },
+          "student_id_column": {
+            "type": "string",
+            "title": "Student Id Column",
+            "default": "name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file",
+          "week_start_date"
+        ],
+        "title": "Body_import_availability_api_v1_availability_import_post"
+      },
+      "CoverageHeatmapEntry": {
+        "properties": {
+          "shift_instance_id": {
+            "type": "string",
+            "title": "Shift Instance Id"
+          },
+          "date": {
+            "type": "string",
+            "title": "Date"
+          },
+          "day_of_week": {
+            "type": "integer",
+            "title": "Day Of Week"
+          },
+          "start_time": {
+            "type": "string",
+            "title": "Start Time"
+          },
+          "end_time": {
+            "type": "string",
+            "title": "End Time"
+          },
+          "slot_index": {
+            "type": "integer",
+            "title": "Slot Index"
+          },
+          "is_hard_shift": {
+            "type": "boolean",
+            "title": "Is Hard Shift"
+          },
+          "preferred_count": {
+            "type": "integer",
+            "title": "Preferred Count"
+          },
+          "available_count": {
+            "type": "integer",
+            "title": "Available Count"
+          },
+          "total_eligible": {
+            "type": "integer",
+            "title": "Total Eligible"
+          },
+          "coverage_risk": {
+            "type": "string",
+            "enum": [
+              "none",
+              "low",
+              "critical"
+            ],
+            "title": "Coverage Risk",
+            "description": "none=3+ eligible, low=1-2, critical=0"
+          }
+        },
+        "type": "object",
+        "required": [
+          "shift_instance_id",
+          "date",
+          "day_of_week",
+          "start_time",
+          "end_time",
+          "slot_index",
+          "is_hard_shift",
+          "preferred_count",
+          "available_count",
+          "total_eligible",
+          "coverage_risk"
+        ],
+        "title": "CoverageHeatmapEntry"
+      },
+      "DiagnosticFinding": {
+        "properties": {
+          "check_type": {
+            "type": "string",
+            "title": "Check Type"
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "hard",
+              "warning",
+              "info"
+            ],
+            "title": "Severity"
+          },
+          "shift_instance_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Shift Instance Id"
+          },
+          "shift_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Shift Date"
+          },
+          "shift_time": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Shift Time"
+          },
+          "student_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Student Id"
+          },
+          "student_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Student Name"
+          },
+          "available_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Available Count"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "recommended_action": {
+            "type": "string",
+            "title": "Recommended Action"
+          }
+        },
+        "type": "object",
+        "required": [
+          "check_type",
+          "severity",
+          "description",
+          "recommended_action"
+        ],
+        "title": "DiagnosticFinding"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "PreflightReportOut": {
+        "properties": {
+          "week_start_date": {
+            "type": "string",
+            "title": "Week Start Date"
+          },
+          "snapshot_id": {
+            "type": "string",
+            "title": "Snapshot Id"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "is_feasible": {
+            "type": "boolean",
+            "title": "Is Feasible",
+            "description": "False if any hard diagnostic findings exist"
+          },
+          "hard_findings_count": {
+            "type": "integer",
+            "title": "Hard Findings Count"
+          },
+          "warning_findings_count": {
+            "type": "integer",
+            "title": "Warning Findings Count"
+          },
+          "findings": {
+            "items": {
+              "$ref": "#/components/schemas/DiagnosticFinding"
+            },
+            "type": "array",
+            "title": "Findings"
+          }
+        },
+        "type": "object",
+        "required": [
+          "week_start_date",
+          "snapshot_id",
+          "created_at",
+          "is_feasible",
+          "hard_findings_count",
+          "warning_findings_count",
+          "findings"
+        ],
+        "title": "PreflightReportOut"
+      },
+      "PreflightRequest": {
+        "properties": {
+          "week_start_date": {
+            "type": "string",
+            "title": "Week Start Date"
+          },
+          "is_exam_period": {
+            "type": "boolean",
+            "title": "Is Exam Period",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "week_start_date"
+        ],
+        "title": "PreflightRequest"
+      },
+      "ScheduleFullOut": {
+        "properties": {
+          "run": {
+            "$ref": "#/components/schemas/ScheduleRunOut"
+          },
+          "assignments": {
+            "items": {
+              "$ref": "#/components/schemas/AssignmentOut"
+            },
+            "type": "array",
+            "title": "Assignments"
+          },
+          "student_summaries": {
+            "items": {
+              "$ref": "#/components/schemas/StudentSummaryOut"
+            },
+            "type": "array",
+            "title": "Student Summaries"
+          }
+        },
+        "type": "object",
+        "required": [
+          "run",
+          "assignments",
+          "student_summaries"
+        ],
+        "title": "ScheduleFullOut"
+      },
+      "ScheduleGenerateRequest": {
+        "properties": {
+          "week_start_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Week Start Date"
+          },
+          "is_exam_period": {
+            "type": "boolean",
+            "title": "Is Exam Period",
+            "default": false
+          },
+          "solver_time_limit_seconds": {
+            "type": "integer",
+            "maximum": 300.0,
+            "minimum": 5.0,
+            "title": "Solver Time Limit Seconds",
+            "default": 60
+          },
+          "force_regenerate": {
+            "type": "boolean",
+            "title": "Force Regenerate",
+            "description": "Overwrite existing draft. Blocked if run has locked assignments (returns 409).",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "week_start_date"
+        ],
+        "title": "ScheduleGenerateRequest"
+      },
+      "ScheduleRunOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "week_start_date": {
+            "type": "string",
+            "title": "Week Start Date"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "solver_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Solver Status"
+          },
+          "solve_time_ms": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Solve Time Ms"
+          },
+          "objective_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Objective Score"
+          },
+          "generated_at": {
+            "type": "string",
+            "title": "Generated At"
+          },
+          "published_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Published At"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "total_shifts": {
+            "type": "integer",
+            "title": "Total Shifts",
+            "default": 0
+          },
+          "filled_shifts": {
+            "type": "integer",
+            "title": "Filled Shifts",
+            "default": 0
+          },
+          "unfilled_shifts": {
+            "type": "integer",
+            "title": "Unfilled Shifts",
+            "default": 0
+          },
+          "hard_violations_count": {
+            "type": "integer",
+            "title": "Hard Violations Count",
+            "default": 0
+          },
+          "soft_violations_count": {
+            "type": "integer",
+            "title": "Soft Violations Count",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "week_start_date",
+          "status",
+          "solver_status",
+          "solve_time_ms",
+          "objective_score",
+          "generated_at",
+          "published_at",
+          "notes"
+        ],
+        "title": "ScheduleRunOut"
+      },
+      "SchedulerConfigOut": {
+        "properties": {
+          "min_hours_default": {
+            "type": "integer",
+            "title": "Min Hours Default"
+          },
+          "max_hours_default": {
+            "type": "integer",
+            "title": "Max Hours Default"
+          },
+          "max_consecutive_hours": {
+            "type": "integer",
+            "title": "Max Consecutive Hours"
+          },
+          "shift_block_minutes": {
+            "type": "integer",
+            "title": "Shift Block Minutes"
+          },
+          "stagger_overlap_minutes": {
+            "type": "integer",
+            "title": "Stagger Overlap Minutes"
+          },
+          "hard_shift_windows": {
+            "items": {},
+            "type": "array",
+            "title": "Hard Shift Windows"
+          },
+          "exam_min_hours": {
+            "type": "integer",
+            "title": "Exam Min Hours"
+          },
+          "exam_max_hours": {
+            "type": "integer",
+            "title": "Exam Max Hours"
+          },
+          "solver_time_limit_seconds": {
+            "type": "integer",
+            "title": "Solver Time Limit Seconds"
+          },
+          "updated_at": {
+            "type": "string",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "min_hours_default",
+          "max_hours_default",
+          "max_consecutive_hours",
+          "shift_block_minutes",
+          "stagger_overlap_minutes",
+          "hard_shift_windows",
+          "exam_min_hours",
+          "exam_max_hours",
+          "solver_time_limit_seconds",
+          "updated_at"
+        ],
+        "title": "SchedulerConfigOut"
+      },
+      "SchedulerConfigUpdate": {
+        "properties": {
+          "min_hours_default": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 40.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Min Hours Default"
+          },
+          "max_hours_default": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 40.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Hours Default"
+          },
+          "max_consecutive_hours": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 12.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Consecutive Hours"
+          },
+          "shift_block_minutes": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 360.0,
+                "minimum": 30.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Shift Block Minutes"
+          },
+          "stagger_overlap_minutes": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 30.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stagger Overlap Minutes"
+          },
+          "exam_min_hours": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 40.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exam Min Hours"
+          },
+          "exam_max_hours": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 40.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exam Max Hours"
+          },
+          "solver_time_limit_seconds": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 300.0,
+                "minimum": 5.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Solver Time Limit Seconds"
+          }
+        },
+        "type": "object",
+        "title": "SchedulerConfigUpdate"
+      },
+      "ShiftInstanceGenerateRequest": {
+        "properties": {
+          "week_start_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Week Start Date",
+            "description": "Monday of the target week"
+          },
+          "is_exam_period": {
+            "type": "boolean",
+            "title": "Is Exam Period",
+            "description": "Use 24/7 exam-period hours",
+            "default": false
+          },
+          "slots_per_window": {
+            "type": "integer",
+            "maximum": 4.0,
+            "minimum": 1.0,
+            "title": "Slots Per Window",
+            "description": "Concurrent desk positions per time window (default 2)",
+            "default": 2
+          },
+          "force": {
+            "type": "boolean",
+            "title": "Force",
+            "description": "Delete and regenerate if instances already exist",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "week_start_date"
+        ],
+        "title": "ShiftInstanceGenerateRequest"
+      },
+      "ShiftInstanceOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "template_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template Id"
+          },
+          "week_start_date": {
+            "type": "string",
+            "title": "Week Start Date"
+          },
+          "date": {
+            "type": "string",
+            "title": "Date"
+          },
+          "day_of_week": {
+            "type": "integer",
+            "title": "Day Of Week"
+          },
+          "start_time": {
+            "type": "string",
+            "title": "Start Time"
+          },
+          "end_time": {
+            "type": "string",
+            "title": "End Time"
+          },
+          "duration_hours": {
+            "type": "number",
+            "title": "Duration Hours"
+          },
+          "is_hard_shift": {
+            "type": "boolean",
+            "title": "Is Hard Shift"
+          },
+          "is_exam_period": {
+            "type": "boolean",
+            "title": "Is Exam Period"
+          },
+          "slot_index": {
+            "type": "integer",
+            "title": "Slot Index"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "template_id",
+          "week_start_date",
+          "date",
+          "day_of_week",
+          "start_time",
+          "end_time",
+          "duration_hours",
+          "is_hard_shift",
+          "is_exam_period",
+          "slot_index"
+        ],
+        "title": "ShiftInstanceOut"
+      },
+      "ShiftTemplateCreate": {
+        "properties": {
+          "day_of_week": {
+            "type": "integer",
+            "maximum": 6.0,
+            "minimum": 0.0,
+            "title": "Day Of Week",
+            "description": "0=Monday \u2026 6=Sunday"
+          },
+          "start_time": {
+            "type": "string",
+            "title": "Start Time",
+            "description": "HH:MM"
+          },
+          "end_time": {
+            "type": "string",
+            "title": "End Time",
+            "description": "HH:MM (use 00:00\u201302:00 for cross-midnight)"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label",
+            "description": "Human label e.g. 'Late Night', 'Opening'"
+          },
+          "is_hard_shift": {
+            "type": "boolean",
+            "title": "Is Hard Shift",
+            "description": "Override hard-shift flag",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "day_of_week",
+          "start_time",
+          "end_time"
+        ],
+        "title": "ShiftTemplateCreate"
+      },
+      "ShiftTemplateOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "day_of_week": {
+            "type": "integer",
+            "title": "Day Of Week"
+          },
+          "start_time": {
+            "type": "string",
+            "title": "Start Time"
+          },
+          "end_time": {
+            "type": "string",
+            "title": "End Time"
+          },
+          "duration_hours": {
+            "type": "number",
+            "title": "Duration Hours"
+          },
+          "is_hard_shift": {
+            "type": "boolean",
+            "title": "Is Hard Shift"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          },
+          "created_by": {
+            "type": "string",
+            "title": "Created By"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "day_of_week",
+          "start_time",
+          "end_time",
+          "duration_hours",
+          "is_hard_shift",
+          "label",
+          "created_by",
+          "is_active"
+        ],
+        "title": "ShiftTemplateOut"
+      },
+      "StudentCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "Full name"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email",
+            "description": "Unique institutional email"
+          },
+          "seniority_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Seniority Date",
+            "description": "Employment start date (YYYY-MM-DD). Earlier = higher seniority."
+          },
+          "min_hours": {
+            "type": "integer",
+            "maximum": 20.0,
+            "minimum": 8.0,
+            "title": "Min Hours",
+            "description": "Hard weekly hours floor (\u22658)",
+            "default": 8
+          },
+          "max_hours": {
+            "type": "integer",
+            "maximum": 20.0,
+            "minimum": 8.0,
+            "title": "Max Hours",
+            "description": "Hard weekly hours ceiling (\u226420)",
+            "default": 20
+          },
+          "target_hours": {
+            "type": "integer",
+            "maximum": 20.0,
+            "minimum": 8.0,
+            "title": "Target Hours",
+            "description": "Student's preferred weekly hours target (midpoint of their stated band)",
+            "default": 8
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "email",
+          "seniority_date"
+        ],
+        "title": "StudentCreate"
+      },
+      "StudentOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "seniority_date": {
+            "type": "string",
+            "title": "Seniority Date"
+          },
+          "min_hours": {
+            "type": "integer",
+            "title": "Min Hours"
+          },
+          "max_hours": {
+            "type": "integer",
+            "title": "Max Hours"
+          },
+          "target_hours": {
+            "type": "integer",
+            "title": "Target Hours"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "email",
+          "seniority_date",
+          "min_hours",
+          "max_hours",
+          "target_hours",
+          "is_active",
+          "created_at"
+        ],
+        "title": "StudentOut"
+      },
+      "StudentSummaryOut": {
+        "properties": {
+          "student_id": {
+            "type": "string",
+            "title": "Student Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "seniority_date": {
+            "type": "string",
+            "title": "Seniority Date"
+          },
+          "min_hours": {
+            "type": "integer",
+            "title": "Min Hours"
+          },
+          "target_hours": {
+            "type": "integer",
+            "title": "Target Hours"
+          },
+          "max_hours": {
+            "type": "integer",
+            "title": "Max Hours"
+          },
+          "assigned_hours": {
+            "type": "number",
+            "title": "Assigned Hours"
+          },
+          "shifts_assigned": {
+            "type": "integer",
+            "title": "Shifts Assigned"
+          },
+          "preferred_shifts": {
+            "type": "integer",
+            "title": "Preferred Shifts"
+          },
+          "available_shifts": {
+            "type": "integer",
+            "title": "Available Shifts"
+          },
+          "hours_vs_target": {
+            "type": "number",
+            "title": "Hours Vs Target",
+            "description": "assigned_hours \u2212 target_hours; negative = under target"
+          },
+          "constraint_status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "under_minimum",
+              "over_maximum",
+              "at_target"
+            ],
+            "title": "Constraint Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "student_id",
+          "name",
+          "email",
+          "seniority_date",
+          "min_hours",
+          "target_hours",
+          "max_hours",
+          "assigned_hours",
+          "shifts_assigned",
+          "preferred_shifts",
+          "available_shifts",
+          "hours_vs_target",
+          "constraint_status"
+        ],
+        "title": "StudentSummaryOut"
+      },
+      "StudentUpdate": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "seniority_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Seniority Date"
+          },
+          "min_hours": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 20.0,
+                "minimum": 8.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Min Hours"
+          },
+          "max_hours": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 20.0,
+                "minimum": 8.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Hours"
+          },
+          "target_hours": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 20.0,
+                "minimum": 8.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Hours"
+          },
+          "is_active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Active"
+          }
+        },
+        "type": "object",
+        "title": "StudentUpdate"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}

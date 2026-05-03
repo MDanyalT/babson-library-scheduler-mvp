@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+.env
+
+# Database / local runtime
+*.db
+*.sqlite
+*.sqlite3
+
+# Generated exports
+*.xlsx
+!sample-input/*.xlsx
+!sample-output/*.xlsx
+
+# OS junk
+.DS_Store
+
+# Logs
+*.log
